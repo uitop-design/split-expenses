@@ -63,7 +63,11 @@ export class GroupsService {
   }
 
   async remove(id: string): Promise<void> {
-    const { count } = await this.prisma.group.deleteMany({ where: { id } });
+    const [, , { count }] = await this.prisma.$transaction([
+      this.prisma.expense.deleteMany({ where: { groupId: id } }),
+      this.prisma.settlement.deleteMany({ where: { groupId: id } }),
+      this.prisma.group.deleteMany({ where: { id } }),
+    ]);
     if (count === 0) {
       throw new NotFoundException('Group not found');
     }
