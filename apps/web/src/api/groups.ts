@@ -47,10 +47,7 @@ export function useDeleteGroup(groupId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => request(`/groups/${groupId}`, noContentSchema, { method: 'DELETE' }),
-    onSuccess: () => {
-      queryClient.removeQueries({ queryKey: queryKeys.group(groupId) });
-      return queryClient.invalidateQueries({ queryKey: queryKeys.groups, exact: true });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.groups, exact: true }),
   });
 }
 
