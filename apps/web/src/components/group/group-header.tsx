@@ -72,7 +72,7 @@ export function GroupHeader({ group }: { group: GroupDetails }) {
             {group.members.length} {group.members.length === 1 ? 'member' : 'members'}
           </button>
         </div>
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" aria-label="Group actions">
               <EllipsisIcon />
