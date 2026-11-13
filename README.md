@@ -7,14 +7,14 @@ exact amounts), and the app shows every member's balance together with a short l
 
 ## Stack
 
-| Layer    | Technologies                                                                                   |
-| -------- | ---------------------------------------------------------------------------------------------- |
-| API      | Node.js 24, TypeScript (strict), NestJS 12 (ESM), Prisma 7 + `@prisma/adapter-pg`, PostgreSQL 18 |
-| Validation | Zod 4 via `nestjs-zod`, env validated with `@nestjs/config` + Zod                            |
-| Docs     | Swagger UI at `/docs`                                                                          |
-| Web      | Vite, React 19, TypeScript, Tailwind CSS v4, shadcn/ui, TanStack Query, react-hook-form + Zod, React Router, sonner, lucide-react |
-| Tooling  | npm workspaces, Biome (lint + format), Jest + ts-jest (API unit tests)                         |
-| Runtime  | Docker Compose: nginx (web), api, postgres, one-off migrate + seed                             |
+| Layer      | Technologies                                                                                                                      |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| API        | Node.js 24, TypeScript (strict), NestJS 12 (ESM), Prisma 7 + `@prisma/adapter-pg`, PostgreSQL 18                                  |
+| Validation | Zod 4 via `nestjs-zod`, env validated with `@nestjs/config` + Zod                                                                 |
+| Docs       | Swagger UI at `/docs`                                                                                                             |
+| Web        | Vite, React 19, TypeScript, Tailwind CSS v4, shadcn/ui, TanStack Query, react-hook-form + Zod, React Router, sonner, lucide-react |
+| Tooling    | npm workspaces, Biome (lint + format), Jest + ts-jest (API unit tests)                                                            |
+| Runtime    | Docker Compose: nginx (web), api, postgres, one-off migrate + seed                                                                |
 
 ## Monorepo layout
 
@@ -46,13 +46,13 @@ exact amounts), and the app shows every member's balance together with a short l
 
 ## Data model
 
-| Table            | Columns                                                                                      |
-| ---------------- | -------------------------------------------------------------------------------------------- |
-| `groups`         | `id` (uuid), `name`, `currency` (ISO 4217, default `UAH`), `created_at`, `updated_at`        |
-| `members`        | `id`, `group_id` → groups (cascade), `name` (unique per group, case-insensitive), `created_at` |
+| Table            | Columns                                                                                                               |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `groups`         | `id` (uuid), `name`, `currency` (ISO 4217, default `UAH`), `created_at`, `updated_at`                                 |
+| `members`        | `id`, `group_id` → groups (cascade), `name` (unique per group, case-insensitive), `created_at`                        |
 | `expenses`       | `id`, `group_id` → groups (cascade), `description`, `amount`, `paid_by_id` → members, `spent_at` (date), `created_at` |
-| `expense_shares` | `expense_id` → expenses (cascade) + `member_id` → members (composite PK), `amount`           |
-| `settlements`    | `id`, `group_id` → groups (cascade), `from_member_id`, `to_member_id`, `amount`, `created_at` |
+| `expense_shares` | `expense_id` → expenses (cascade) + `member_id` → members (composite PK), `amount`                                    |
+| `settlements`    | `id`, `group_id` → groups (cascade), `from_member_id`, `to_member_id`, `amount`, `created_at`                         |
 
 All money is stored as integers in minor currency units (kopecks, cents). The database also enforces
 positive amounts, `from_member_id <> to_member_id`, the currency format and a unique index on
@@ -103,28 +103,34 @@ settlement removes it from the list.
 All endpoints are served under `/api`; errors share one format:
 
 ```json
-{ "statusCode": 400, "error": "Bad Request", "message": ["amount: Too small"], "path": "/api/groups/…/expenses", "timestamp": "2026-11-13T12:00:00.000Z" }
+{
+  "statusCode": 400,
+  "error": "Bad Request",
+  "message": ["amount: Too small"],
+  "path": "/api/groups/…/expenses",
+  "timestamp": "2026-11-13T12:00:00.000Z"
+}
 ```
 
 Validation errors return `400` with a list of messages, unique conflicts `409`, missing records
 `404`, broken references `400`; unexpected errors return `500` without details.
 
-| Method   | Path                                       | Description                                              |
-| -------- | ------------------------------------------ | -------------------------------------------------------- |
-| `POST`   | `/groups`                                  | Create a group: `{ name, currency?, members: string[] }` |
-| `GET`    | `/groups`                                  | List groups, newest first, with `membersCount` and `totalSpent` |
-| `GET`    | `/groups/:id`                              | Group with members                                       |
-| `PATCH`  | `/groups/:id`                              | Rename: `{ name }`                                       |
-| `DELETE` | `/groups/:id`                              | Delete with all members, expenses and settlements (`204`) |
-| `POST`   | `/groups/:id/members`                      | Add a member: `{ name }`                                 |
-| `DELETE` | `/groups/:id/members/:memberId`            | Remove a member without history (`204`, `409` otherwise) |
-| `GET`    | `/groups/:id/expenses?page=1&limit=20`     | Expenses with shares, newest first; `limit` ≤ 100         |
-| `POST`   | `/groups/:id/expenses`                     | `{ description, amount, paidById, spentAt, split }`      |
-| `DELETE` | `/groups/:id/expenses/:expenseId`          | Delete an expense (`204`)                                |
-| `POST`   | `/groups/:id/settlements`                  | Record a transfer: `{ fromMemberId, toMemberId, amount }` |
-| `GET`    | `/groups/:id/settlements`                  | Settlements, newest first                                |
-| `GET`    | `/groups/:id/balances`                     | `{ balances: [{ memberId, name, balance }], transfers: [{ fromMemberId, toMemberId, amount }] }` |
-| `GET`    | `/health`                                  | `{ status: "ok", checks: { postgres: "up" } }`           |
+| Method   | Path                                   | Description                                                                                      |
+| -------- | -------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `POST`   | `/groups`                              | Create a group: `{ name, currency?, members: string[] }`                                         |
+| `GET`    | `/groups`                              | List groups, newest first, with `membersCount` and `totalSpent`                                  |
+| `GET`    | `/groups/:id`                          | Group with members                                                                               |
+| `PATCH`  | `/groups/:id`                          | Rename: `{ name }`                                                                               |
+| `DELETE` | `/groups/:id`                          | Delete with all members, expenses and settlements (`204`)                                        |
+| `POST`   | `/groups/:id/members`                  | Add a member: `{ name }`                                                                         |
+| `DELETE` | `/groups/:id/members/:memberId`        | Remove a member without history (`204`, `409` otherwise)                                         |
+| `GET`    | `/groups/:id/expenses?page=1&limit=20` | Expenses with shares, newest first; `limit` ≤ 100                                                |
+| `POST`   | `/groups/:id/expenses`                 | `{ description, amount, paidById, spentAt, split }`                                              |
+| `DELETE` | `/groups/:id/expenses/:expenseId`      | Delete an expense (`204`)                                                                        |
+| `POST`   | `/groups/:id/settlements`              | Record a transfer: `{ fromMemberId, toMemberId, amount }`                                        |
+| `GET`    | `/groups/:id/settlements`              | Settlements, newest first                                                                        |
+| `GET`    | `/groups/:id/balances`                 | `{ balances: [{ memberId, name, balance }], transfers: [{ fromMemberId, toMemberId, amount }] }` |
+| `GET`    | `/health`                              | `{ status: "ok", checks: { postgres: "up" } }`                                                   |
 
 Interactive documentation: <http://localhost:3701/docs> (OpenAPI JSON at `/docs-json`).
 
@@ -134,11 +140,11 @@ Interactive documentation: <http://localhost:3701/docs> (OpenAPI JSON at `/docs-
 docker compose up -d --build
 ```
 
-| Service    | URL / port                                   |
-| ---------- | -------------------------------------------- |
-| web        | <http://localhost:3700> (nginx, proxies `/api`) |
-| api        | <http://localhost:3701/api>, Swagger at <http://localhost:3701/docs> |
-| postgres   | `localhost:5440`, user / password / db: `split` / `split` / `split_expenses` |
+| Service  | URL / port                                                                   |
+| -------- | ---------------------------------------------------------------------------- |
+| web      | <http://localhost:3700> (nginx, proxies `/api`)                              |
+| api      | <http://localhost:3701/api>, Swagger at <http://localhost:3701/docs>         |
+| postgres | `localhost:5440`, user / password / db: `split` / `split` / `split_expenses` |
 
 The one-off `migrate` service applies migrations and runs the seed before the API starts. The seed
 is idempotent: it creates "Trip to Carpathians" (4 members, 10 expenses, one settlement) and
@@ -167,14 +173,14 @@ The Vite dev server proxies `/api` to `http://localhost:3701`, so open <http://l
 
 Run from the repository root:
 
-| Script              | Description                                         |
-| ------------------- | --------------------------------------------------- |
-| `npm run dev`       | API (watch mode) and web dev server in parallel     |
-| `npm run build`     | Build both workspaces                               |
-| `npm run typecheck` | Type-check both workspaces                          |
-| `npm run lint`      | Biome lint and format check for the whole monorepo  |
-| `npm run format`    | Apply Biome fixes and formatting                    |
-| `npm test`          | API unit tests (Jest, Prisma is mocked)             |
+| Script              | Description                                        |
+| ------------------- | -------------------------------------------------- |
+| `npm run dev`       | API (watch mode) and web dev server in parallel    |
+| `npm run build`     | Build both workspaces                              |
+| `npm run typecheck` | Type-check both workspaces                         |
+| `npm run lint`      | Biome lint and format check for the whole monorepo |
+| `npm run format`    | Apply Biome fixes and formatting                   |
+| `npm test`          | API unit tests (Jest, Prisma is mocked)            |
 
 The unit tests cover the split logic, balance and transfer calculation, expense creation,
 member removal and the exception filter; they do not need a database.
