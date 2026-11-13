@@ -1,0 +1,85 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Group {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  name        String       @db.VarChar(64)
+  currency    String       @default("UAH") @db.Char(3)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  members     Member[]
+  expenses    Expense[]
+  settlements Settlement[]
+
+  @@index([createdAt])
+  @@map("groups")
+}
+
+model Member {
+  id                  String         @id @default(uuid(7)) @db.Uuid
+  groupId             String         @map("group_id") @db.Uuid
+  name                String         @db.VarChar(32)
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  group               Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  paidExpenses        Expense[]
+  shares              ExpenseShare[]
+  sentSettlements     Settlement[]   @relation("SettlementFrom")
+  receivedSettlements Settlement[]   @relation("SettlementTo")
+
+  @@index([groupId])
+  @@map("members")
+}
+
+model Expense {
+  id          String         @id @default(uuid(7)) @db.Uuid
+  groupId     String         @map("group_id") @db.Uuid
+  description String         @db.VarChar(120)
+  amount      Int
+  paidById    String         @map("paid_by_id") @db.Uuid
+  spentAt     DateTime       @map("spent_at") @db.Date
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  group       Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  paidBy      Member         @relation(fields: [paidById], references: [id], onDelete: NoAction)
+  shares      ExpenseShare[]
+
+  @@index([groupId, spentAt(sort: Desc), createdAt(sort: Desc)])
+  @@index([paidById])
+  @@map("expenses")
+}
+
+model ExpenseShare {
+  expenseId String  @map("expense_id") @db.Uuid
+  memberId  String  @map("member_id") @db.Uuid
+  amount    Int
+  expense   Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  member    Member  @relation(fields: [memberId], references: [id], onDelete: NoAction)
+
+  @@id([expenseId, memberId])
+  @@index([memberId])
+  @@map("expense_shares")
+}
+
+model Settlement {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  groupId      String   @map("group_id") @db.Uuid
+  fromMemberId String   @map("from_member_id") @db.Uuid
+  toMemberId   String   @map("to_member_id") @db.Uuid
+  amount       Int
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  group        Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  fromMember   Member   @relation("SettlementFrom", fields: [fromMemberId], references: [id], onDelete: NoAction)
+  toMember     Member   @relation("SettlementTo", fields: [toMemberId], references: [id], onDelete: NoAction)
+
+  @@index([groupId, createdAt(sort: Desc)])
+  @@index([fromMemberId])
+  @@index([toMemberId])
+  @@map("settlements")
+}
