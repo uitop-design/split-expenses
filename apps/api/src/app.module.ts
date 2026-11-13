@@ -3,15 +3,19 @@ import { APP_FILTER, APP_PIPE, RouterModule } from '@nestjs/core';
 import { AllExceptionsFilter } from './common/errors/all-exceptions.filter.js';
 import { AppValidationPipe } from './common/validation/zod-validation.pipe.js';
 import { ConfigModule } from './config/config.module.js';
+import { GroupsModule } from './groups/groups.module.js';
 import { HealthModule } from './health/health.module.js';
+import { MembersModule } from './members/members.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
 @Module({
   imports: [
     ConfigModule,
     PrismaModule,
+    GroupsModule,
+    MembersModule,
     HealthModule,
-    RouterModule.register([{ path: 'api', children: [HealthModule] }]),
+    RouterModule.register([{ path: 'api', children: [GroupsModule, MembersModule, HealthModule] }]),
   ],
   providers: [
     { provide: APP_PIPE, useClass: AppValidationPipe },
